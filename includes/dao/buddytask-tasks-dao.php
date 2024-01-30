@@ -275,6 +275,7 @@ class BuddyTaskTasksDAO {
         $task->setDueTo($rawTaskData->due_to);
         $task->setCreatedAt($rawTaskData->created_at);
         $task->setCreatedBy($rawTaskData->created_by);
+        $task->setCreatedByName(bp_core_get_user_displayname($rawTaskData->created_by));
         $task->setDone($rawTaskData->done);
         $task->setDoneAt($rawTaskData->done_at);
         $task->setDoneBy($rawTaskData->done_by);

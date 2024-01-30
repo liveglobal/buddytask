@@ -146,7 +146,7 @@ add_action( 'buddytask_admin_init', 'buddytask_check_version' );
 function buddytask_default_settings(){
     $defaults = array(
         'enabled' => true,
-        'lists' => array('Backlog', 'Todo', 'Doing', 'Done')
+        'lists' => array('Requested', 'Todo', 'Doing', 'Done')
     );
     return apply_filters( 'buddytask_default_settings', $defaults );
 }

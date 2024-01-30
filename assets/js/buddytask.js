@@ -50,6 +50,25 @@ jQuery(function(){
         }
     });
 
+    function renderTaskDropdown(task) {
+      let dd='';
+      if (task.canEdit || task.canDelete) {
+         dd += `
+            <div class="task-menu dropdown">
+               <button type="submit" class="task-menu-button dropdown-toggle" data-toggle="dropdown"><i class="dashicons dashicons-ellipsis"></i></button>
+               <ul class="dropdown-menu drop-left">`;
+         if (task.canEdit) {
+            dd += `  <li><a href="#" class="edit-task-button editable"><i class="dashicons dashicons-edit"></i>` + btargs.lang.edit + `</a></li>`;
+         }
+         if (task.canDelete) {
+            dd += `  <li class="divider"></li><li><a href="#" class="delete-task-button"><i class="dashicons dashicons-no"></i>` + btargs.lang.delete + `</a></li>`;
+         }
+         dd += `</ul>
+               </div>`;
+      }
+      return dd;
+    }
+
     function renderTasks(tasks){
         let html = "";
         if (tasks){
@@ -62,7 +81,6 @@ jQuery(function(){
                 } else {
                     due = btargs.lang.due_date;
                 }
-
                 let assignTo = task.owners ? renderAssignedUsers(task.owners) : '';
 
                 html += `<li class="task">
@@ -71,17 +89,14 @@ jQuery(function(){
                                         <div class="color-line task-progress-bar-current" style="width: `+task.done_percent+`%;"></div>
                                     </div>
                                 </div>
-                                <div class = 'task-wrapper' id="` + task.uuid + `">
+                                <div class = 'task-wrapper' id="` + task.uuid +
+                                    `" data-created-by-name="` + task.created_by_name + 
+                                    `" data-created-date="`  + task.created_at +
+                                    `" data-can-edit="` + (task.canEdit ? 'true':'false') + 
+                                    `" data-can-delete="` + (task.canDelete ? 'true':'false') + `">
                                     <div class="task-title-block">
-                                        <div class="task-title">` + task.title + `</div>
-                                        <div class="task-menu dropdown">
-                                            <button type="submit" class="task-menu-button dropdown-toggle" data-toggle="dropdown"><i class="dashicons dashicons-ellipsis"></i></button>
-                                            <ul class="dropdown-menu drop-left">`;
-
-                html += `<li><a href="#" class="edit-task-button editable"><i class="dashicons dashicons-edit"></i>` + btargs.lang.edit + `</a></li>`;
-                html += `<li class="divider"></li><li><a href="#" class="delete-task-button"><i class="dashicons dashicons-no"></i>` + btargs.lang.delete + `</a></li>`;
-                html += `</ul>
-                            </div>
+                                    <div class="task-title">` + task.title + `</div>` + renderTaskDropdown(task) + `
+                                        
                             </div>
                             <div class="task-created-by" style="display: none">` + task.created_by + `</div>
                             <div class="task-description editable">` + task.description + `</div>
@@ -121,9 +136,11 @@ jQuery(function(){
         const lists = data.lists;
         lists.forEach(list => {
             let heading = "";
-            heading += `<h2 class="tasks-list-heading">` + list.name + `
-                            <button type="submit" class="add-new-task-button"><i class="dashicons dashicons-plus"></i></button>
-                        </h2>`;
+            heading += '<h2 class="tasks-list-heading">' + list.name;
+            if (data.permissions.add_task == "TRUE") { 
+               heading += '<button type="submit" class="add-new-task-button"><i class="dashicons dashicons-plus"></i></button>'
+            }
+            heading += "</h2>";
             html += `<div class="tasks-list-wrapper">
                         <div class="tasks-list" id="` + list.uuid + `">
                              <div class = 'color-line-big'></div>` + heading +
@@ -137,42 +154,43 @@ jQuery(function(){
         jQuery('.task-board').removeClass('loading-board');
 
         jQuery('.task-board').html(html);
+        if (data.permissions.add_task == "TRUE" || data.permissions.edit_list_name == "TRUE") {
+            jQuery('.tasks-list h2').on('click', function (e) {
+                  const isInlineEditList = jQuery(e.target).is('h2');
+                  const isAddTaskButton = jQuery(e.target).is('i');
+                  if (isInlineEditList) {
+                     const list = jQuery(this).closest('.tasks-list');
+                     inlineEditList(list);
+                  } else if (isAddTaskButton) {
+                     jQuery(this).addClass('autocomplete-loading');
+                     isRefreshing = true;
 
-        jQuery('.tasks-list h2').on('click', function (e) {
-            const isInlineEditList = jQuery(e.target).is('h2');
-            const isAddTaskButton = jQuery(e.target).is('i');
-            if (isInlineEditList) {
-                const list = jQuery(this).closest('.tasks-list');
-                inlineEditList(list);
-            } else if (isAddTaskButton) {
-                jQuery(this).addClass('autocomplete-loading');
-                isRefreshing = true;
+                     const list_id = jQuery(e.target).closest('.tasks-list').attr('id');
+                     const position = jQuery('#' + list_id).find('.task').length;
+                     const data = {
+                        'action': 'add_new_task',
+                        'list_id': list_id,
+                        'position': position,
+                        '_wpnonce': jQuery("input#_wpnonce_add_new_task").val(),
+                     };
 
-                const list_id = jQuery(e.target).closest('.tasks-list').attr('id');
-                const position = jQuery('#' + list_id).find('.task').length;
-                const data = {
-                    'action': 'add_new_task',
-                    'list_id': list_id,
-                    'position': position,
-                    '_wpnonce': jQuery("input#_wpnonce_add_new_task").val(),
-                };
+                     jQuery.ajax({
+                        type: "POST",
+                        url: ajaxurl,
+                        data: data,
+                        success: function (data) {
+                              const board = JSON.parse(data);
+                              renderBoard(board);
+                              jQuery('.add-new-task-button').removeClass('autocomplete-loading');
+                        },
+                        error: function (data) {
+                        }
+                     });
 
-                jQuery.ajax({
-                    type: "POST",
-                    url: ajaxurl,
-                    data: data,
-                    success: function (data) {
-                        const board = JSON.parse(data);
-                        renderBoard(board);
-                        jQuery('.add-new-task-button').removeClass('autocomplete-loading');
-                    },
-                    error: function (data) {
-                    }
-                });
-
-                e.preventDefault();
-            }
-        });
+                     e.preventDefault();
+                  }
+            });
+        }
 
         jQuery('.delete-task-button').on( 'click', function(e) {
             const target = e.target;
@@ -201,37 +219,38 @@ jQuery(function(){
             jQuery(this).css('color', listBorderColors[i]);
             i = (i + 1) % listBorderColors.length;
         });
+        if (data.permissions.add_task == "TRUE"){
+            jQuery('.tasks').sortable({
+                  connectWith: ['.tasks'],
+                  placeholder: "tasks-highlight",
+                  start: function (e, ui) {
+                     isDragging = true;
+                     // creates a temporary attribute on the element with the old index
+                     jQuery(this).attr('data-previndex', ui.item.index());
+                     const list = jQuery(ui.item).closest('.tasks-list').attr('id');
+                     jQuery(this).attr('data-prevlist', list);
+                  },
+                  stop: function (e, ui) {
+                     isDragging = false;
 
-        jQuery('.tasks').sortable({
-            connectWith: ['.tasks'],
-            placeholder: "tasks-highlight",
-            start: function (e, ui) {
-                isDragging = true;
-                // creates a temporary attribute on the element with the old index
-                jQuery(this).attr('data-previndex', ui.item.index());
-                const list = jQuery(ui.item).closest('.tasks-list').attr('id');
-                jQuery(this).attr('data-prevlist', list);
-            },
-            stop: function (e, ui) {
-                isDragging = false;
+                     const task_id = ui.item.find('.task-wrapper').attr('id');
+                     const task_index = jQuery(ui.item).parent().children('li').index(ui.item);
+                     const newList = jQuery(ui.item).closest('.tasks-list').attr('id');
+                     const oldList = jQuery(this).attr('data-prevlist');
+                     const oldIndex = parseInt(jQuery(this).attr('data-previndex'));
 
-                const task_id = ui.item.find('.task-wrapper').attr('id');
-                const task_index = jQuery(ui.item).parent().children('li').index(ui.item);
-                const newList = jQuery(ui.item).closest('.tasks-list').attr('id');
-                const oldList = jQuery(this).attr('data-prevlist');
-                const oldIndex = parseInt(jQuery(this).attr('data-previndex'));
+                     if (oldIndex !== task_index || oldList !== newList) {
+                        reorderTask(newList, task_id, task_index);
+                     }
 
-                if (oldIndex !== task_index || oldList !== newList) {
-                    reorderTask(newList, task_id, task_index);
-                }
+                     // gets the new and old index then removes the temporary attribute
+                     jQuery(this).removeAttr('data-previndex');
+                     jQuery(this).removeAttr('data-prevlist');
 
-                // gets the new and old index then removes the temporary attribute
-                jQuery(this).removeAttr('data-previndex');
-                jQuery(this).removeAttr('data-prevlist');
-
-            },
-            revert: 100
-        });
+                  },
+                  revert: 100
+            });
+         }
 
         let buttons = {};
         buttons[btargs.lang.delete] = function() {
@@ -335,6 +354,8 @@ jQuery(function(){
         const list_id = jQuery(target).closest('.tasks-list').attr('id');
         const task_id = jQuery(target).closest('.task-wrapper').attr('id');
         const created_by = jQuery(target).closest('.task-wrapper').find('.task-created-by').text();
+        const created_by_name = jQuery(target).closest('.task-wrapper').data('createdByName');
+        const created_date = jQuery(target).closest('.task-wrapper').data('createdDate');
         const title = jQuery(target).closest('.task-wrapper').find('.task-title').text();
         const description = jQuery(target).closest('.task-wrapper').find('.task-description').html();
         const due_date_epoch = jQuery(target).closest('.task-wrapper').find('.task-date-epoch').val();
@@ -343,8 +364,19 @@ jQuery(function(){
         jQuery('#edit-task-form #edit-task-list').val(list_id);
         jQuery('#edit-task-form #edit-task-id').val(task_id);
         jQuery('#edit-task-form #edit-task-created-by').val(created_by);
+        jQuery('#edit-task-form #edit-task-created-by-name').html("<strong>Created By: </strong>" + created_by_name);
+        const tempDate = new Date(created_date * 1000);
+        jQuery('#edit-task-form #edit-task-created-date').html("<strong>Created Date: </strong>" + 
+         tempDate.toDateString());
         jQuery('#edit-task-form #edit-task-title').val(title);
         jQuery('#edit-task-form #edit-task-description').html(description);
+
+        const canEdit = jQuery(target).closest('.task-wrapper').data('canEdit');
+        if (!canEdit) {
+          jQuery('div[aria-describedby="edit-task-dialog"] div.ui-dialog-buttonpane').addClass('hide');
+        } else {
+          jQuery('div[aria-describedby="edit-task-dialog"] div.ui-dialog-buttonpane').removeClass('hide');
+        }
 
         jQuery('#add-todo').enterKey(function(e){
             const title = jQuery(this).val();
@@ -874,6 +906,10 @@ jQuery(function(){
 
         html += `<div id="edit-task-dialog" style="display: none" title="`+btargs.lang.edit_task+`">
             <form id="edit-task-form">`;
+        html +=  `<div class="edit-task-creation-info">
+                     <p id="edit-task-created-by-name"></p>
+                     <p id="edit-task-created-date"></p>
+                  </div>`;
         html +=  `<fieldset style="float: left; width: 100%">
                     <label htmlFor="edit-task-title">`+btargs.lang.title+`</label>
                     <input type="text" name="edit-task-title" id="edit-task-title"

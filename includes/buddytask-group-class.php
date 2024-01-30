@@ -103,26 +103,39 @@ class  BuddyTask_Group extends BP_Group_Extension {
     }
 
     function display( $group_id = null ) {
-        global $bp;
+      $enabled = groups_get_groupmeta( $group_id, 'buddytask_enabled', true );
+      if ( $enabled == 1 ) {
+          $this->get_groups_template_part( 'tasks/home' );
+      }
 
-        if (!$group_id) {
-            $group_id = $bp->groups->current_group->id;
-        }
+      //   global $bp;
 
-        if ( groups_is_user_member( $bp->loggedin_user->id, $group_id )
-            || groups_is_user_mod( $bp->loggedin_user->id, $group_id )
-            || groups_is_user_admin( $bp->loggedin_user->id, $group_id )
-            || is_super_admin() ) {
+      //   if (!$group_id) {
+      //       $group_id = $bp->groups->current_group->id;
+      //   }
 
-            $enabled = groups_get_groupmeta( $group_id, 'buddytask_enabled', true );
-            if ( $enabled == 1 ) {
-                $this->get_groups_template_part( 'tasks/home' );
-            }
-        } else {
-            echo '<div id="message" class="error"><p>'.esc_html__('This content is only available to group members.', 'buddytask').'</p></div>';
-        }
+      //   if ( groups_is_user_member( $bp->loggedin_user->id, $group_id )
+      //       || groups_is_user_mod( $bp->loggedin_user->id, $group_id )
+      //       || groups_is_user_admin( $bp->loggedin_user->id, $group_id )
+      //       || is_super_admin() ) {
+
+      //       $enabled = groups_get_groupmeta( $group_id, 'buddytask_enabled', true );
+      //       if ( $enabled == 1 ) {
+      //           $this->get_groups_template_part( 'tasks/home' );
+      //       }
+      //   } else {
+      //       echo '<div id="message" class="error"><p>'.esc_html__('This content is only available to group members.', 'buddytask').'</p></div>';
+      //   }
     }
-
+    function render_permission($group_id, $name, $defaultVal) {
+         $val = groups_get_groupmeta( $group_id, $name, true );
+         $val = empty($val) ? $defaultVal : $val;
+         echo "<select name='$name' id='$name'>";
+         echo "  <option value='ALL' ". ($val=='ALL' ? "selected":"").">ALL</option>";
+         echo "  <option value='OWN' ". ($val=='OWN' ? "selected":"").">OWN</option>";
+         echo "  <option value='NONE' ".($val=='NONE' ? "selected":"").">NONE</option>";
+         echo "</select>";
+    }
     function render_settings($group_id, $is_create){
         $defaults =  buddytask_default_settings();
         $enabled = $is_create ? $defaults['enabled'] : buddytask_is_enabled($group_id);
@@ -138,12 +151,95 @@ class  BuddyTask_Group extends BP_Group_Extension {
                     </div>
                 </div>
             </fieldset>
+            <fieldset>
+               <legend>Permissions</legend>
+
+               <table class="buddytask-permissions">
+                  <tr>
+                     <th class="role"></th>
+                     <th class="col" data-bp-tooltip-pos="right" data-bp-tooltip="view service requests on the board">VIEW</th>
+                     <th class="col" data-bp-tooltip-pos="right" data-bp-tooltip="edit requests in the 'Requested' column">EDIT Requested</th>
+                     <th class="col" data-bp-tooltip-pos="right" data-bp-tooltip="edit any request">EDIT</th>
+                     <th class="col" data-bp-tooltip-pos="right" data-bp-tooltip="delete requests in the 'Requested' column">DELETE Requested</th>
+                     <th class="col" data-bp-tooltip-pos="right" data-bp-tooltip="delete any request">DELETE</th>
+                  </tr>
+                  <tr>
+                     <td><?php echo esc_html_e( get_group_role_label( $group_id, 'organizer_plural_label_name' ), 'buddyboss' ); ?></td>
+                     <td><?php $this->render_permission($group_id, "organizer_view","ALL"); ?></td>
+                     <td><?php $this->render_permission($group_id, "organizer_edit_requested","ALL"); ?></td>
+                     <td><?php $this->render_permission($group_id, "organizer_edit","ALL"); ?></td>
+                     <td><?php $this->render_permission($group_id, "organizer_delete_requested","ALL"); ?></td>
+                     <td><?php $this->render_permission($group_id, "organizer_delete","ALL"); ?></td>
+                  </tr>
+                  <tr>
+                     <td><?php echo esc_html_e( get_group_role_label( $group_id, 'moderator_plural_label_name' ), 'buddyboss' ); ?></td>
+                     <td><?php $this->render_permission($group_id, "moderator_view","ALL"); ?></td>
+                     <td><?php $this->render_permission($group_id, "moderator_edit_requested","ALL"); ?></td>
+                     <td><?php $this->render_permission($group_id, "moderator_edit","ALL"); ?></td>
+                     <td><?php $this->render_permission($group_id, "moderator_delete_requested","ALL"); ?></td>
+                     <td><?php $this->render_permission($group_id, "moderator_delete","ALL"); ?></td>
+                  </tr>
+                     <td><?php echo esc_html_e( get_group_role_label( $group_id, 'member_plural_label_name' ), 'buddyboss' ); ?></td>
+                     <td><?php $this->render_permission($group_id, "member_view","ALL"); ?></td>
+                     <td><?php $this->render_permission($group_id, "member_edit_requested","OWN"); ?></td>
+                     <td><?php $this->render_permission($group_id, "member_edit","NONE"); ?></td>
+                     <td><?php $this->render_permission($group_id, "member_delete_requested","OWN"); ?></td>
+                     <td><?php $this->render_permission($group_id, "member_delete","NONE"); ?></td>
+                  </tr>
+                  </tr>
+                     <td data-bp-tooltip-pos="right" data-bp-tooltip="non-group members but LG, ABWE team members or promoted external users">Authorized Non-Members</td>
+                     <td><?php $this->render_permission($group_id, "visitor_view","ALL"); ?></td>
+                     <td><?php $this->render_permission($group_id, "visitor_edit_requested","OWN"); ?></td>
+                     <td><?php $this->render_permission($group_id, "visitor_edit","NONE"); ?></td>
+                     <td><?php $this->render_permission($group_id, "visitor_delete_requested","OWN"); ?></td>
+                     <td><?php $this->render_permission($group_id, "visitor_delete","NONE"); ?></td>
+                  </tr>
+                  </tr>
+                     <td data-bp-tooltip-pos="right" data-bp-tooltip="Vistors to the group with minimum permissions (i.e. Interested Visitor user role)">Limited Vistors</td>
+                     <td><?php $this->render_permission($group_id, "limited_visitor_view","ALL"); ?></td>
+                     <td><?php $this->render_permission($group_id, "limited_visitor_edit_requested","NONE"); ?></td>
+                     <td><?php $this->render_permission($group_id, "limited_visitor_edit","NONE"); ?></td>
+                     <td><?php $this->render_permission($group_id, "limited_visitor_delete_requested","NONE"); ?></td>
+                     <td><?php $this->render_permission($group_id, "limited_visitor_delete","NONE"); ?></td>
+                  </tr>
+               </table>
+               <p><i>NOTES: (1) adding to the board should typically only be done through the Request Service form but 
+                  <?php echo esc_html_e( get_group_role_label( $group_id, 'organizer_plural_label_name' ), 'buddyboss' ); ?> and 
+                  <?php echo esc_html_e( get_group_role_label( $group_id, 'moderator_plural_label_name' ), 'buddyboss' ); ?>
+               can insert projects directly  (2) only group admin level users are allowed to change the name of the columns</i></p>
+            </fieldset>
         </div>
         <?php
     }
 
     function persist_settings($group_id){
         buddytask_groups_update_groupmeta($group_id, 'buddytask_enabled', "0");
+
+        buddytask_groups_update_groupmeta($group_id, "organizer_view","ALL");
+        buddytask_groups_update_groupmeta($group_id, "organizer_edit_requested","ALL");
+        buddytask_groups_update_groupmeta($group_id, "organizer_edit","ALL");
+        buddytask_groups_update_groupmeta($group_id, "organizer_delete_requested","ALL");
+        buddytask_groups_update_groupmeta($group_id, "organizer_delete","ALL");
+        buddytask_groups_update_groupmeta($group_id, "moderator_view","ALL");
+        buddytask_groups_update_groupmeta($group_id, "moderator_edit_requested","ALL");
+        buddytask_groups_update_groupmeta($group_id, "moderator_edit","ALL");
+        buddytask_groups_update_groupmeta($group_id, "moderator_delete_requested","ALL");
+        buddytask_groups_update_groupmeta($group_id, "moderator_delete","ALL");
+        buddytask_groups_update_groupmeta($group_id, "member_view","ALL");
+        buddytask_groups_update_groupmeta($group_id, "member_edit_requested","OWN");
+        buddytask_groups_update_groupmeta($group_id, "member_edit","NONE");
+        buddytask_groups_update_groupmeta($group_id, "member_delete_requested","OWN");
+        buddytask_groups_update_groupmeta($group_id, "member_delete","NONE");
+        buddytask_groups_update_groupmeta($group_id, "visitor_view","ALL");
+        buddytask_groups_update_groupmeta($group_id, "visitor_edit_requested","OWN");
+        buddytask_groups_update_groupmeta($group_id, "visitor_edit","NONE");
+        buddytask_groups_update_groupmeta($group_id, "visitor_delete_requested","OWN");
+        buddytask_groups_update_groupmeta($group_id, "visitor_delete","NONE");
+        buddytask_groups_update_groupmeta($group_id, "limited_visitor_view","ALL");
+        buddytask_groups_update_groupmeta($group_id, "limited_visitor_edit_requested","NONE");
+        buddytask_groups_update_groupmeta($group_id, "limited_visitor_edit","NONE");
+        buddytask_groups_update_groupmeta($group_id, "limited_visitor_delete_requested","NONE");
+        buddytask_groups_update_groupmeta($group_id, "limited_visitor_delete","NONE");
     }
 
     function get_groups_template_part( $slug ) {

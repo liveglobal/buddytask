@@ -3,7 +3,7 @@
 Plugin Name:  BuddyTask
 Plugin URI:
 Description: Adds KanBan like task management boards to Posts, Pages and BuddyPress Groups!
-Version: 1.2.0
+Version: 1.2.0-lg
 Requires at least: 4.6.0
 Tags: BuddyTask, task management, task list, kanban, kan ban, buddypress
 License: GPL V3
@@ -473,6 +473,30 @@ class  BuddyTask {
         $url     = wp_get_referer();
         $post_id = url_to_postid( $url );
 
+        $current_user_id = get_current_user_id();
+        $isGroupAdmin = groups_is_user_admin( $current_user_id, $group_id );
+        $isGroupModerator = groups_is_user_mod( $current_user_id, $group_id );
+        $isGroupMember = groups_is_user_member( $current_user_id, $group_id );
+        $userProfileType =  bp_get_member_type($current_user_id);
+        $permPrefix = "";
+        if ($isGroupAdmin) {
+         $permPrefix = "organizer_";
+        } else if ($isGroupModerator) {
+         $permPrefix = "moderator_";
+        } else  if ($isGroupMember) {
+         $permPrefix = "member_";
+        } else if ($userProfileType == 'interested-visitor') {
+         $permPrefix = "limited_visitor_";
+        } else {
+         $permPrefix = "visitor_";
+        }
+        // ALL, OWN, or NONE
+        $viewPermission = groups_get_groupmeta( $group_id, $permPrefix."view", true );  
+        $editRequestedPermission = groups_get_groupmeta( $group_id, $permPrefix."edit_requested", true );
+        $editPermission = groups_get_groupmeta( $group_id, $permPrefix."edit", true );
+        $deleteRequestedPermission = groups_get_groupmeta( $group_id, $permPrefix."delete_requested", true );
+        $deletePermission = groups_get_groupmeta( $group_id, $permPrefix."delete", true );
+
         $boardsDao = new BuddyTaskBoardsDAO();
         if($uuid === null){
             $boards = $group_id > 0 ? $boardsDao->getByGroupId($group_id) : $boardsDao->getByPostId($post_id);
@@ -524,16 +548,61 @@ class  BuddyTask {
                 $tasksDao = new BuddyTaskTasksDAO();
                 $ownersDao = new BuddyTaskOwnersDAO();
                 foreach ($lists as &$list) {
-                    $tasks = $tasksDao->getByListId($list->getId());
-                    foreach ($tasks as &$task) {
+                    $tempTasks = $tasksDao->getByListId($list->getId());
+                    $tasks = array();
+                    if ($viewPermission) {}
+                    foreach ($tempTasks as &$task) {
+                        if (!($viewPermission == "ALL" ||
+                           ($viewPermission == "OWN" && $task->getCreatedBy() == $current_user_id))) {
+                           continue;
+                        }
                         $owners = $ownersDao->getByTaskId($task->getId());
                         $task->setOwners($owners);
+                        if ($list->getName() == "Requested") {
+                           if ($editRequestedPermission == "ALL" ||
+                              ($editReqeuestedPermission == "OWN" && $task->getCreatedBy() == $current_user_id)) {
+                              $task->setCanEdit(True);
+                           } else {
+                              $task->setCanEdit(False);
+                           }
+                           if ($deleteRequestedPermission == "ALL" ||
+                              ($deleteRequestedPermission == "OWN" && $task->getCreatedBy() == $current_user_id)) {
+                              $task->setCanDelete(True);
+                           } else {
+                              $task->setCanDelete(False);
+                           }
+                        } else {
+                           if ($editPermission == "ALL" ||
+                              ($editPermission == "OWN" && $task->getCreatedBy() == $current_user_id)) {
+                              $task->setCanEdit(True);
+                           } else {
+                              $task->setCanEdit(False);
+                           }
+                           if ($deletePermission == "ALL" ||
+                              ($deletePermission == "OWN" && $task->getCreatedBy() == $current_user_id)) {
+                              $task->setCanDelete(True);
+                           } else {
+                              $task->setCanDelete(False);
+                           }
+                        }
+                        
+                        $tasks[] = $task;
                     }
                     $list->setTasks($tasks);
                     $board->addList($list);
                 }
             }
         }
+
+        
+        if  ($isGroupModerator || $isGroupAdmin || is_super_admin() ) { 
+            $board->setPermission("add_task","TRUE");  // default == FALSE
+        }
+        if  ($isGroupAdmin || is_super_admin() ) { 
+            $board->setPermission("edit_list_name","TRUE");  // default == FALSE
+        }
+       
+
         return $board;
     }
 
@@ -669,7 +738,7 @@ class  BuddyTask {
 
         $task_uuid = isset($_REQUEST['task_id']) && wp_is_uuid($_REQUEST['task_id']) ? sanitize_text_field($_REQUEST['task_id']) : null;
         $task_title = isset($_REQUEST['task_title']) ? wp_unslash(sanitize_text_field($_REQUEST['task_title'])) : null;
-        $task_description = isset($_REQUEST['task_description']) ? wp_unslash(sanitize_text_field($_REQUEST['task_description'])) : null;
+        $task_description = isset($_REQUEST['task_description']) ? wp_unslash($_REQUEST['task_description']) : null;
         $task_due_date = isset($_REQUEST['task_due_date']) && !empty($_REQUEST['task_due_date']) && is_numeric($_REQUEST['task_due_date']) ?
             floatval($_REQUEST['task_due_date']) : null;
         $task_assign_to = isset($_REQUEST['task_assign_to']) && is_array($_REQUEST['task_assign_to']) ?
@@ -811,6 +880,29 @@ class  BuddyTask {
                 $parent_task_id = $parent_task->getId();
             }
             $tasksDao->reorderTask($list_id, $parent_task_id, $task_uuid, $task_index);
+            $currentGroupType = bp_groups_get_group_type(bp_get_current_group_id());
+            error_log("curr group type=".$currentGroupType);
+            if (($currentGroupType == 'serving-opportunities') &&
+                ( $list->getName() == 'Todo' || str_contains($list->getName(), 'Accepted'))) { 
+               // moved to "Todo/Accepted" state so create an activity event on the group feed
+               $task = $tasksDao->getByUuid($task_uuid);
+               $content  = '<a class="buddytask-link" href="'. get_site_url() . '/groups/'. bp_get_current_group_slug(). '/manage_requests/">';
+               $content .= ' <p class="buddytask-title">'.$task->getTitle().'</p>';
+               $content .= $task->getDescription();
+               $content .= '</a>';
+               $activity_id = groups_record_activity(
+                  array(
+                     'id'         => false,  // false creates new activity item
+                     'action'     => 'service request accepted',
+                     'type'       => 'service_request_accepted',
+                     'content'    => $content,
+                     'item_id'    => bp_get_current_group_id()
+                  )   
+               );
+               if ($activity_id) {
+                  groups_update_groupmeta( bp_get_current_group_id(), 'last_activity', bp_core_current_time() );
+               }
+            }
         }
 
         $board = $this->get_or_create_board();
@@ -937,6 +1029,35 @@ buddytask();
 register_activation_hook(__FILE__, array('BuddyTaskInstaller', 'activate'));
 register_deactivation_hook(__FILE__, array('BuddyTaskInstaller', 'deactivate'));
 register_uninstall_hook(__FILE__, array('BuddyTaskInstaller', 'uninstall'));
+
+
+function groups_register_service_request_accepted_action() {
+	$bp = buddypress();
+
+	if ( ! bp_is_active( 'activity' ) ) {
+		return false;
+	}
+
+	bp_activity_set_action(
+		$bp->groups->id,
+		'service_request_accepted',
+		__( 'Accepted a Service Request', 'buddyboss' ),
+		'bp_groups_format_activity_action_service_request_accepted',
+		__( 'Updates', 'buddyboss' ),
+		array( 'activity', 'group', 'member', 'member_groups' )
+	);
+}
+add_action( 'groups_register_activity_actions', 'groups_register_service_request_accepted_action' );
+
+function bp_groups_format_activity_action_service_request_accepted( $action, $activity ) {
+	$user_link = bp_core_get_userlink( $activity->user_id );
+
+	$group      = groups_get_group( $activity->item_id );
+	$group_link = '<a href="' . esc_url( bp_get_group_permalink( $group ) ) . '">' . esc_html( $group->name ) . '</a>';
+
+	$action = sprintf( __( '%1$s accepted a new Service Request in the %2$s group', 'buddyboss' ), $user_link, $group_link );
+	return apply_filters( 'groups_activity_service_request_accepted_action', $action, $activity );
+}
 
 endif;
 

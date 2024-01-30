@@ -48,6 +48,7 @@ class BuddyTaskTask {
      * @var integer
      */
     public $created_by;
+    public $created_by_name;
 
     /**
      * @var integer
@@ -83,6 +84,9 @@ class BuddyTaskTask {
      * @var BuddyTaskTask[]
      */
     public $tasks = array();
+
+    public $canEdit;
+    public $canDelete;
 
     /**
      * @return int
@@ -227,6 +231,10 @@ class BuddyTaskTask {
     {
         $this->created_by = $created_by;
     }
+    public function setCreatedByName($created_by_name)
+    {
+      $this->created_by_name = $created_by_name;
+    }
 
     /**
      * @return int
@@ -354,6 +362,15 @@ class BuddyTaskTask {
     public function addOwner(BuddyTaskOwner $owner)
     {
         array_push($this->owners, $owner);
+    }
+
+    public function setCanEdit($canEdit) 
+    {
+      $this->canEdit = $canEdit;
+    }
+    public function setCanDelete($canDelete)
+    {
+      $this->canDelete = $canDelete;
     }
 
 }

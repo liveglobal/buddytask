@@ -44,6 +44,11 @@ class BuddyTaskBoard {
      */
     public $lists = array();
 
+   // permissions
+   public $permissions = array(
+      "add_task"=>"FALSE",
+      "edit_list_name"=>"FALSE"
+   );
 
     /**
      * @return int
@@ -181,6 +186,11 @@ class BuddyTaskBoard {
         array_push($this->lists, $list);
     }
 
-
+    public function getPermissions() {
+      return $this->permissions;
+    }
+    public function setPermission($permName, $permLevel) {
+      $this->permissions[$permName] = $permLevel;
+    }
 
 }
