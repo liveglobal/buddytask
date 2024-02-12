@@ -138,7 +138,9 @@ class BuddyTaskInstaller {
 				done BOOLEAN,
 				done_at bigint(11),
 				done_by bigint(11),
-				done_percent int DEFAULT 0
+				done_percent int DEFAULT 0,
+            private tinyint DEFAULT 0,
+            activity_created DEFAULT 0
 		) DEFAULT CHARSET=utf8;";
 		dbDelta($sql);
 

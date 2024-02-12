@@ -74,6 +74,14 @@ class BuddyTaskTask {
      * @var integer
      */
     public $done_percent;
+        /**
+     * @var integer indicates if the task is private to just the owner, group admin & group moderator
+     */
+    public $private;
+        /**
+     * @var integer indicates if the task generated an activity record in the group feed
+     */
+    public $activity_created;
 
     /**
      * @var BuddyTaskOwner[]
@@ -307,7 +315,6 @@ class BuddyTaskTask {
     {
         return $this->done_percent;
     }
-
     /**
      * @param int $done_percent
      */
@@ -316,6 +323,34 @@ class BuddyTaskTask {
         $this->done_percent = $done_percent;
     }
 
+    /**
+     * @return int
+     */
+    public function getPrivate()
+    {
+        return $this->private;
+    }
+    /**
+     * @param int $private
+     */
+    public function setPrivate($private)
+    {
+        $this->private = $private;
+    }
+        /**
+     * @return int
+     */
+    public function getActivityCreated()
+    {
+        return $this->activity_created;
+    }
+    /**
+     * @param int $activity_created
+     */
+    public function setActivityCreated($activity_created)
+    {
+        $this->activity_created = $activity_created;
+    }
     /**
      * @return BuddyTaskTask[]
      */

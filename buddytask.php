@@ -880,26 +880,31 @@ class  BuddyTask {
             }
             $tasksDao->reorderTask($list_id, $parent_task_id, $task_uuid, $task_index);
             $currentGroupType = bp_groups_get_group_type(bp_get_current_group_id());
-            error_log("curr group type=".$currentGroupType);
             if (($currentGroupType == 'serving-opportunities') &&
-                ( $list->getName() == 'Todo' || str_contains($list->getName(), 'Accepted'))) { 
+                ( $list->getName() == 'Todo' 
+                  || str_contains($list->getName(), 'Accepted')
+                  || str_contains($list->getName(), 'Approved'))) { 
                // moved to "Todo/Accepted" state so create an activity event on the group feed
                $task = $tasksDao->getByUuid($task_uuid);
-               $content  = '<a class="buddytask-link" href="'. get_site_url() . '/groups/'. bp_get_current_group_slug(). '/manage_requests/">';
-               $content .= ' <p class="buddytask-title">'.$task->getTitle().'</p>';
-               $content .= $task->getDescription();
-               $content .= '</a>';
-               $activity_id = groups_record_activity(
-                  array(
-                     'id'         => false,  // false creates new activity item
-                     'action'     => 'service request accepted',
-                     'type'       => 'service_request_accepted',
-                     'content'    => $content,
-                     'item_id'    => bp_get_current_group_id()
-                  )   
-               );
-               if ($activity_id) {
-                  groups_update_groupmeta( bp_get_current_group_id(), 'last_activity', bp_core_current_time() );
+               if ($task->getActivityCreated() != 1) {
+                  $content  = '<a class="buddytask-link" href="'. get_site_url() . '/groups/'. bp_get_current_group_slug(). '/manage_requests/">';
+                  $content .= ' <p class="buddytask-title">'.$task->getTitle().'</p>';
+                  $content .= $task->getDescription();
+                  $content .= '</a>';
+                  $activity_id = groups_record_activity(
+                     array(
+                        'id'         => false,  // false creates new activity item
+                        'action'     => 'service request accepted',
+                        'type'       => 'service_request_accepted',
+                        'content'    => $content,
+                        'item_id'    => bp_get_current_group_id()
+                     )   
+                  );
+                  if ($activity_id) {
+                     groups_update_groupmeta( bp_get_current_group_id(), 'last_activity', bp_core_current_time() );
+                  }
+                  $task->setActivityCreated(1);
+                  $tasksDao->save($task);
                }
             }
         }

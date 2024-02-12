@@ -38,7 +38,9 @@ class BuddyTaskTasksDAO {
                 'done_by' => $task->getDoneBy(),
                 'done_at' => $task->getDoneAt(),
                 'done_percent' => $task->getDonePercent(),
-                'position' => $task->getPosition()
+                'position' => $task->getPosition(),
+                'private' => $task->getPrivate(),
+                'activity_created' => $task->getActivityCreated()
             );
 
 			$wpdb->update($table, $columns, array('id' => $task->getId()), '%s', '%d');
@@ -56,7 +58,9 @@ class BuddyTaskTasksDAO {
                 'done_by' => $task->getDoneBy(),
                 'done_at' => $task->getDoneAt(),
                 'done_percent' => $task->getDonePercent(),
-                'position' => $task->getPosition()
+                'position' => $task->getPosition(),
+                'private' => $task->getPrivate(),
+                'activity_created' => $task->getActivityCreated()
             );
 
 			$wpdb->insert($table, $columns);
@@ -77,7 +81,7 @@ class BuddyTaskTasksDAO {
 		global $wpdb;
 
 		$table = BuddyTaskInstaller::getTasksTable();
-        $sql = $wpdb->prepare("SELECT * FROM ".$table." WHERE id = %d", intval($id));
+      $sql = $wpdb->prepare("SELECT * FROM ".$table." WHERE id = %d", intval($id));
 		$results = $wpdb->get_results($sql);
 		if (is_array($results) && count($results) > 0) {
 			return $this->populateTaskData($results[0]);
@@ -270,18 +274,19 @@ class BuddyTaskTasksDAO {
 		$task->setUuid($rawTaskData->uuid);
 		$task->setListId($rawTaskData->list_id);
 		$task->setParentId($rawTaskData->parent_id);
-        $task->setTitle($rawTaskData->title);
-        $task->setDescription($rawTaskData->description);
-        $task->setDueTo($rawTaskData->due_to);
-        $task->setCreatedAt($rawTaskData->created_at);
-        $task->setCreatedBy($rawTaskData->created_by);
-        //$task->setCreatedByName(bp_core_get_user_displayname($rawTaskData->created_by));
-        $task->setCreatedByLink(bp_core_get_userlink($rawTaskData->created_by));
-        $task->setDone($rawTaskData->done);
-        $task->setDoneAt($rawTaskData->done_at);
-        $task->setDoneBy($rawTaskData->done_by);
-        $task->setPosition($rawTaskData->position);
-        $task->setDonePercent($rawTaskData->done_percent);
+      $task->setTitle($rawTaskData->title);
+      $task->setDescription($rawTaskData->description);
+      $task->setDueTo($rawTaskData->due_to);
+      $task->setCreatedAt($rawTaskData->created_at);
+      $task->setCreatedBy($rawTaskData->created_by);
+      $task->setCreatedByLink(bp_core_get_userlink($rawTaskData->created_by));
+      $task->setDone($rawTaskData->done);
+      $task->setDoneAt($rawTaskData->done_at);
+      $task->setDoneBy($rawTaskData->done_by);
+      $task->setPosition($rawTaskData->position);
+      $task->setDonePercent($rawTaskData->done_percent);
+      $task->setPrivate($rawTaskData->private);
+      $task->setActivityCreated($rawTaskData->activity_created);
 
 		return $task;
 	}
