@@ -550,7 +550,6 @@ class  BuddyTask {
                 foreach ($lists as &$list) {
                     $tempTasks = $tasksDao->getByListId($list->getId());
                     $tasks = array();
-                    if ($viewPermission) {}
                     foreach ($tempTasks as &$task) {
                         if (!($viewPermission == "ALL" ||
                            ($viewPermission == "OWN" && $task->getCreatedBy() == $current_user_id))) {

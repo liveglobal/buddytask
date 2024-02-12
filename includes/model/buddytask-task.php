@@ -48,7 +48,7 @@ class BuddyTaskTask {
      * @var integer
      */
     public $created_by;
-    public $created_by_name;
+    public $created_by_link;
 
     /**
      * @var integer
@@ -231,9 +231,9 @@ class BuddyTaskTask {
     {
         $this->created_by = $created_by;
     }
-    public function setCreatedByName($created_by_name)
+    public function setCreatedByLink($created_by_link)
     {
-      $this->created_by_name = $created_by_name;
+      $this->created_by_link = $created_by_link;
     }
 
     /**

@@ -90,8 +90,8 @@ jQuery(function(){
                                     </div>
                                 </div>
                                 <div class = 'task-wrapper' id="` + task.uuid +
-                                    `" data-created-by-name="` + task.created_by_name + 
-                                    `" data-created-date="`  + task.created_at +
+                                    `" data-created-by-link='` + task.created_by_link + 
+                                    `' data-created-date="`  + task.created_at +
                                     `" data-can-edit="` + (task.canEdit ? 'true':'false') + 
                                     `" data-can-delete="` + (task.canDelete ? 'true':'false') + `">
                                     <div class="task-title-block">
@@ -354,7 +354,7 @@ jQuery(function(){
         const list_id = jQuery(target).closest('.tasks-list').attr('id');
         const task_id = jQuery(target).closest('.task-wrapper').attr('id');
         const created_by = jQuery(target).closest('.task-wrapper').find('.task-created-by').text();
-        const created_by_name = jQuery(target).closest('.task-wrapper').data('createdByName');
+        const created_by_link = jQuery(target).closest('.task-wrapper').data('createdByLink');
         const created_date = jQuery(target).closest('.task-wrapper').data('createdDate');
         const title = jQuery(target).closest('.task-wrapper').find('.task-title').text();
         const description = jQuery(target).closest('.task-wrapper').find('.task-description').html();
@@ -364,7 +364,7 @@ jQuery(function(){
         jQuery('#edit-task-form #edit-task-list').val(list_id);
         jQuery('#edit-task-form #edit-task-id').val(task_id);
         jQuery('#edit-task-form #edit-task-created-by').val(created_by);
-        jQuery('#edit-task-form #edit-task-created-by-name').html("<strong>Created By: </strong>" + created_by_name);
+        jQuery('#edit-task-form #edit-task-created-by-link').html("<strong>Created By: </strong>" + created_by_link);
         const tempDate = new Date(created_date * 1000);
         jQuery('#edit-task-form #edit-task-created-date').html("<strong>Created Date: </strong>" + 
          tempDate.toDateString());
@@ -907,7 +907,7 @@ jQuery(function(){
         html += `<div id="edit-task-dialog" style="display: none" title="`+btargs.lang.edit_task+`">
             <form id="edit-task-form">`;
         html +=  `<div class="edit-task-creation-info">
-                     <p id="edit-task-created-by-name"></p>
+                     <p id="edit-task-created-by-link"></p>
                      <p id="edit-task-created-date"></p>
                   </div>`;
         html +=  `<fieldset style="float: left; width: 100%">
