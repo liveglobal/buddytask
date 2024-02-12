@@ -207,7 +207,7 @@ jQuery(function(){
         jQuery( ".task-info-block" ).on( "mouseup", openEditTaskDialog);
 
         let listBorderColors = [
-            '#000963', '#375980', '#679999', '#fe641d'
+            '#000963', '#375980', '#679999', '#fe641d', '#8b0ffd'
         ];
         let i = 0;
         jQuery('.tasks-list').each(function() {
