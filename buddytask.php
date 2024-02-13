@@ -637,12 +637,14 @@ class  BuddyTask {
             $task->setListId($list->getId());
             $task->setDone(false);
             $task->setPosition($position);
+            $task->setPrivate(0);
+            $task->setActivityCreated(0);
 
             if($parent_uuid){
                 $parent_task = $tasksDao->getByUuid($parent_uuid);
                 $task->setParentId($parent_task->getId());
             }
-
+            error_log('adding task -- '.json_encode($task));
             $tasksDao->save($task);
         }
 
