@@ -214,7 +214,7 @@ jQuery(function(){
             jQuery(this).css('border-color', listBorderColors[i]);
             i = (i + 1) % listBorderColors.length;
         });
-
+        i = 0;
         jQuery('h2.tasks-list-heading').each(function() {
             jQuery(this).css('color', listBorderColors[i]);
             i = (i + 1) % listBorderColors.length;
