@@ -551,6 +551,10 @@ class  BuddyTask {
                     $tempTasks = $tasksDao->getByListId($list->getId());
                     $tasks = array();
                     foreach ($tempTasks as &$task) {
+                        if ($task->getPrivate() == 1 && 
+                            !($isGroupAdmin || $isGroupModerator || ($task->getCreatedBy() == $current_user_id))) {
+                           continue;  // private task only viewable by Team Lead, Team Members or creator
+                        }
                         if (!($viewPermission == "ALL" ||
                            ($viewPermission == "OWN" && $task->getCreatedBy() == $current_user_id))) {
                            continue;
