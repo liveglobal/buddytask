@@ -211,8 +211,11 @@ h2.tasks-list-heading {
     padding-left: 16px !important;
 }
 
-.task-board-dialog {
-    z-index: 99 !important;
+@media screen and (max-height: 699px) {
+   .task-board-dialog {
+      overflow: auto;
+      height: 100% !important;
+  }
 }
 
 #users-invite-list .user-avatar {
