@@ -26,7 +26,7 @@ class  BuddyTask_Group extends BP_Group_Extension {
         $args = array(
             'name' => buddytask_get_name(),
             'slug' =>  buddytask_get_slug(),
-            'nav_item_position' => 12,
+            'nav_item_position' => 40,
             'enable_nav_item' =>  $enabled === '1'
         );
         parent::init( $args );
