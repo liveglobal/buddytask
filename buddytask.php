@@ -749,7 +749,7 @@ class  BuddyTask {
         $task_assign_to = isset($_REQUEST['task_assign_to']) && is_array($_REQUEST['task_assign_to']) ?
             array_map('absint', $_REQUEST['task_assign_to']) : array();
         $task_todos =  isset($_REQUEST['task_todos']) ? json_decode(wp_unslash(sanitize_text_field($_REQUEST['task_todos']))) : null;
-
+        error_log(print_r($task_todos, true));
         $logged_in_user = get_current_user_id();
 
         require_once( buddytask_get_includes_dir() . 'dao/buddytask-tasks-dao.php' );
@@ -797,6 +797,7 @@ class  BuddyTask {
             }
         }
         foreach ($task_todos as $index => $todo){
+            error_log("persisting task todo $index isNew = $todo->isNew");
             if($todo->isNew){
                 $sub_task = new BuddyTaskTask();
                 $sub_task->setParentId($task->getId());
@@ -821,6 +822,8 @@ class  BuddyTask {
                 $sub_task->setDoneBy(null);
                 $sub_task->setDonePercent(0);
             }
+            $sub_task->setPrivate(0);
+            $sub_task->setActivityCreated(0);
             $tasksDao->save($sub_task);
         }
         $done_percent = !empty($total) ? round(($done * 100) / $total) : 0;
