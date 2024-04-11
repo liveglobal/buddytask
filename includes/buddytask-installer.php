@@ -140,7 +140,8 @@ class BuddyTaskInstaller {
 				done_by bigint(11),
 				done_percent int DEFAULT 0,
             private tinyint DEFAULT 0,
-            activity_created tinyint DEFAULT 0
+            activity_created tinyint DEFAULT 0,
+            modified_datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 		) DEFAULT CHARSET=utf8;";
 		dbDelta($sql);
 
