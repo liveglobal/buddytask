@@ -290,6 +290,7 @@ jQuery(function(){
                 tinyMCE.get(taskDescriptionEditorId).setContent(description);
 
                 buddytask_refresh_buttons_state();
+                autocomplete();
             },
             close: function() {
                 jQuery("body").css({ overflow: 'inherit' });
@@ -299,12 +300,13 @@ jQuery(function(){
                 jQuery('#edit-task-form #edit-task-title').val('');
                 jQuery('#edit-task-due-date-epoch').val('');
                 jQuery('#edit-task-form #edit-task-description').html('');
-                jQuery('#users-invite-list').find('div').remove();
-
+                //jQuery('#users-invite-list').find('div').remove();
                 jQuery('.checklist-progress-bar-current').width('0%');
                 jQuery('.checklist-progress-percentage').text('0%');
 
                 jQuery('#todo-list').html('');
+
+                jQuery('#edit-task-assign-to').autocomplete("destroy").val("");
             }
         });
 
@@ -553,11 +555,14 @@ jQuery(function(){
                     data: data,
                     success: function(data){
                         jQuery('#edit-task-assign-to').removeClass('autocomplete-loading');
+                        //console.log("successfully got user data " + data);
                         if(data){
                             response(JSON.parse(data));
                         }
                     },
-                    error: function(data){}
+                    error: function(data){
+                        //console.log('problem retrieving users' + data);
+                    }
                 });
             }
         };
@@ -745,7 +750,7 @@ jQuery(function(){
     }
 
     function updatePercentage(){
-        console.log('updatePercentage');
+        //console.log('updatePercentage');
         const todoList = jQuery('#todo-list');
         const done = todoList.find('.done').length;
         const total = todoList.find('.todo').length;
@@ -911,7 +916,7 @@ jQuery(function(){
                      <p id="edit-task-created-date"></p>
                   </div>`;
         html +=  `<fieldset style="float: left; width: 100%">
-                    <label htmlFor="edit-task-title">`+btargs.lang.title+`</label>
+                    <label htmlFor="edit-task-title" for="edit-task-title">`+btargs.lang.title+`</label>
                     <input type="text" name="edit-task-title" id="edit-task-title"
                            class="text ui-widget-content ui-corner-all">
                 </fieldset>
@@ -921,12 +926,12 @@ jQuery(function(){
                          class="text ui-widget-content ui-corner-all"></div>
                 </fieldset>
                 <fieldset style="float: left; width: 73%">
-                    <label htmlFor="edit-task-assign-to">`+btargs.lang.assign_to+`</label>
+                    <label htmlFor="edit-task-assign-to" for="edit-task-assign-to">`+btargs.lang.assign_to+`</label>
                     <input type="text" name="edit-task-assign-to" id="edit-task-assign-to"
                            class="text ui-widget-content ui-corner-all">
                 </fieldset>
                 <fieldset style="float: left; width: 27%;">
-                    <label htmlFor="edit-task-due-date">`+btargs.lang.due_date+`</label>
+                    <label htmlFor="edit-task-due-date" for="edit-task-due-date">`+btargs.lang.due_date+`</label>
                     <input type="text" name="edit-task-due-date" id="edit-task-due-date"
                            class="text ui-widget-content ui-corner-all">
                         <input type="hidden" name="edit-task-due-date-epoch" id="edit-task-due-date-epoch"
